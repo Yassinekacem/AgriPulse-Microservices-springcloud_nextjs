@@ -1,0 +1,161 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  kafka:
+    image: apache/kafka:3.7.2
+    container_name: kafka
+    ports:
+      - "9092:9092"
+
+  mseureka:
+    image: agripulse/mseureka:1.0
+    build:
+      context: ./MsEureka
+    container_name: mseureka
+    ports:
+      - "4040:4040"
+
+  configserver:
+    image: agripulse/configserver:1.0
+    build:
+      context: ./ConfigServer
+    container_name: configserver
+    ports:
+      - "9999:9999"
+    depends_on:
+      - mseureka
+    environment:
+      EUREKA_HOST: "mseureka"
+      EUREKA_PORT: "4040"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://mseureka:4040/eureka/"
+    healthcheck:
+      # On teste l’endpoint configserver (pas besoin d’actuator)
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9999/Gateway/default >/dev/null 2>&1 || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 40
+
+  gateway:
+    image: agripulse/gateway:1.0
+    build:
+      context: ./Gateway
+    container_name: gateway
+    ports:
+      - "5000:5000"
+    depends_on:
+      mseureka:
+        condition: service_started
+      configserver:
+        condition: service_healthy
+    environment:
+      SPRING_CONFIG_IMPORT: "optional:configserver:http://configserver:9999"
+      SPRING_CLOUD_CONFIG_URI: "http://configserver:9999"
+      SPRING_CLOUD_CONFIG_FAIL_FAST: "false"
+      SPRING_CLOUD_CONFIG_ENABLED: "true"
+
+      EUREKA_HOST: "mseureka"
+      EUREKA_PORT: "4040"
+      FRONT_HOST: "localhost"
+      FRONT_PORT: "3000"
+
+  msexploitations:
+    image: agripulse/msexploitations:1.0
+    build:
+      context: "./services métier/MSExploitations"
+    container_name: msexploitations
+    ports:
+      - "9096:9096"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      mseureka:
+        condition: service_started
+      configserver:
+        condition: service_healthy
+    environment:
+      SPRING_CONFIG_IMPORT: "optional:configserver:http://configserver:9999"
+      SPRING_CLOUD_CONFIG_URI: "http://configserver:9999"
+      DB_HOST: "mysql"
+      DB_PORT: "3306"
+      DB_USER: "root"
+      DB_PASS: "root"
+      EUREKA_HOST: "mseureka"
+      EUREKA_PORT: "4040"
+
+  msnotification:
+    image: agripulse/msnotification:1.0
+    build:
+      context: "./services métier/MSNotification"
+    container_name: msnotification
+    ports:
+      - "9097:9097"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      mseureka:
+        condition: service_started
+      configserver:
+        condition: service_healthy
+    environment:
+      SPRING_CONFIG_IMPORT: "optional:configserver:http://configserver:9999"
+      SPRING_CLOUD_CONFIG_URI: "http://configserver:9999"
+      SPRING_CLOUD_CONFIG_FAIL_FAST: "false"
+      SPRING_CLOUD_CONFIG_ENABLED: "true"
+
+      DB_HOST: "mysql"
+      DB_PORT: "3306"
+      DB_USER: "root"
+      DB_PASS: "root"
+      KAFKA_HOST: "kafka"
+      KAFKA_PORT: "9092"
+      EUREKA_HOST: "mseureka"
+      EUREKA_PORT: "4040"
+
+  mssupervision:
+    image: agripulse/mssupervision:1.0
+    build:
+      context: "./services métier/MSSupervision"
+    container_name: mssupervision
+    ports:
+      - "9095:9095"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      mseureka:
+        condition: service_started
+      configserver:
+        condition: service_healthy
+    environment:
+      SPRING_CONFIG_IMPORT: "optional:configserver:http://configserver:9999"
+      SPRING_CLOUD_CONFIG_URI: "http://configserver:9999"
+      SPRING_CLOUD_CONFIG_FAIL_FAST: "false"
+      SPRING_CLOUD_CONFIG_ENABLED: "true"
+
+      DB_HOST: "mysql"
+      DB_PORT: "3306"
+      DB_USER: "root"
+      DB_PASS: "root"
+      KAFKA_HOST: "kafka"
+      KAFKA_PORT: "9092"
+      EUREKA_HOST: "mseureka"
+      EUREKA_PORT: "4040"
+
+volumes:
+  mysql_data:
