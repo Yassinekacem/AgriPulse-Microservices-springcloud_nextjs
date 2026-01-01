@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: msnotification
+  namespace: agripulse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: msnotification
+  template:
+    metadata:
+      labels:
+        app: msnotification
+    spec:
+      containers:
+      - name: msnotification
+        image: agripulse/msnotification:1.0
+        ports:
+        - containerPort: 9097
+        envFrom:
+        - configMapRef:
+            name: agripulse-config
+        - secretRef:
+            name: agripulse-secret
+        env:
+        - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+          value: "true"
+        - name: EUREKA_INSTANCE_IP_ADDRESS
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: msnotification
+  namespace: agripulse
+spec:
+  type: ClusterIP
+  selector:
+    app: msnotification
+  ports:
+  - port: 9097
+    targetPort: 9097

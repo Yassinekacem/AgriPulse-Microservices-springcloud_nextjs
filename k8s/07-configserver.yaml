@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: configserver
+  namespace: agripulse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: configserver
+  template:
+    metadata:
+      labels:
+        app: configserver
+    spec:
+      containers:
+      - name: configserver
+        image: agripulse/configserver:1.0
+        ports:
+        - containerPort: 9999
+        envFrom:
+        - configMapRef:
+            name: configserver-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: configserver
+  namespace: agripulse
+spec:
+  type: ClusterIP
+  selector:
+    app: configserver
+  ports:
+  - port: 9999
+    targetPort: 9999

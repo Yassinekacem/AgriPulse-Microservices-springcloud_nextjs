@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mssupervision
+  namespace: agripulse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mssupervision
+  template:
+    metadata:
+      labels:
+        app: mssupervision
+    spec:
+      containers:
+      - name: mssupervision
+        image: agripulse/mssupervision:1.0
+        ports:
+        - containerPort: 9095
+        envFrom:
+        - configMapRef:
+            name: agripulse-config
+        - secretRef:
+            name: agripulse-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mssupervision
+  namespace: agripulse
+spec:
+  type: ClusterIP
+  selector:
+    app: mssupervision
+  ports:
+  - port: 9095
+    targetPort: 9095

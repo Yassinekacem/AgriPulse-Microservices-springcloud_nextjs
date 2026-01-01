@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configserver-config
+  namespace: agripulse
+data:
+  EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://mseureka:4040/eureka/"
