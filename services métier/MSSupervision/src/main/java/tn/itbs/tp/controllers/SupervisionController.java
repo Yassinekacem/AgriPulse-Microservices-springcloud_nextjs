@@ -18,12 +18,12 @@ public class SupervisionController {
     }
 
     @PostMapping("/capteurs")
-    public DonneeCapteur addCapteur(@RequestBody DonneeCapteur d) {
+    public Object addCapteur(@RequestBody DonneeCapteur d) {
         return service.ajouterCapteur(d);
     }
 
     @PostMapping("/meteo")
-    public DonneeMeteo addMeteo(@RequestBody DonneeMeteo d) {
+    public Object addMeteo(@RequestBody DonneeMeteo d) {
         return service.ajouterMeteo(d);
     }
 

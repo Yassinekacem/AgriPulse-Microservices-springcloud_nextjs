@@ -1,13 +1,13 @@
 package tn.itbs.tp.services;
 
-import org.springframework.http.HttpStatus;
+import feign.FeignException;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 import tn.itbs.tp.feign.ParcelleFeign;
 import tn.itbs.tp.kafka.AlerteEvent;
 import tn.itbs.tp.kafka.KafkaProducerService;
 import tn.itbs.tp.models.DonneeCapteur;
 import tn.itbs.tp.models.DonneeMeteo;
+import tn.itbs.tp.models.MessageResponse;
 import tn.itbs.tp.models.Parcelle;
 import tn.itbs.tp.repositories.DonneeCapteurRepo;
 import tn.itbs.tp.repositories.DonneeMeteoRepo;
@@ -33,18 +33,18 @@ public class SupervisionService {
         this.kafkaProducer = kafkaProducer;
     }
 
-    public DonneeCapteur ajouterCapteur(DonneeCapteur d) {
-        // Vérif synchrone que la parcelle existe
-        Parcelle parcelle = parcelleFeign.getById(d.getParcelleId());
+    public Object ajouterCapteur(DonneeCapteur d) {
+        Parcelle parcelle = getParcelleOuNull(d.getParcelleId());
         if (parcelle == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Parcelle inexistante");
+            return new MessageResponse("Parcelle inexistante avec id=" + d.getParcelleId());
         }
 
         d.setId(null);
-        if (d.getDate() == null) d.setDate(Instant.now());
+        if (d.getDate() == null) {
+            d.setDate(Instant.now());
+        }
         DonneeCapteur saved = capteurRepo.save(d);
 
-        // Détection anomalie (exemple simple)
         if (saved.getValeur() != null && saved.getValeur() < 0) {
             AlerteEvent event = new AlerteEvent();
             event.setParcelleId(saved.getParcelleId());
@@ -57,14 +57,16 @@ public class SupervisionService {
         return saved;
     }
 
-    public DonneeMeteo ajouterMeteo(DonneeMeteo d) {
-        Parcelle parcelle = parcelleFeign.getById(d.getParcelleId());
+    public Object ajouterMeteo(DonneeMeteo d) {
+        Parcelle parcelle = getParcelleOuNull(d.getParcelleId());
         if (parcelle == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Parcelle inexistante");
+            return new MessageResponse("Parcelle inexistante avec id=" + d.getParcelleId());
         }
 
         d.setId(null);
-        if (d.getDate() == null) d.setDate(Instant.now());
+        if (d.getDate() == null) {
+            d.setDate(Instant.now());
+        }
         return meteoRepo.save(d);
     }
 
@@ -74,5 +76,16 @@ public class SupervisionService {
 
     public List<DonneeMeteo> meteoParParcelle(Integer parcelleId) {
         return meteoRepo.findByParcelleId(parcelleId);
+    }
+
+    private Parcelle getParcelleOuNull(Integer parcelleId) {
+        try {
+            return parcelleFeign.getById(parcelleId);
+        } catch (FeignException.NotFound ex) {
+            return null;
+        } catch (FeignException ex) {
+            // À adapter si tu veux un autre message en cas d'erreur réseau
+            return null;
+        }
     }
 }
