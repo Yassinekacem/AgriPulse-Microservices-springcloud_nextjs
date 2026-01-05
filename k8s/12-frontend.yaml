@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agripulse-frontend
+  namespace: agripulse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agripulse-frontend
+  template:
+    metadata:
+      labels:
+        app: agripulse-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: agripulse/frontend:1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NEXT_PUBLIC_API_BASE_URL
+              value: "http://gateway.agripulse.svc.cluster.local:5000"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agripulse-frontend
+  namespace: agripulse
+spec:
+  selector:
+    app: agripulse-frontend
+  type: NodePort
+  ports:
+    - port: 3000
+      targetPort: 3000
+      nodePort: 32000
