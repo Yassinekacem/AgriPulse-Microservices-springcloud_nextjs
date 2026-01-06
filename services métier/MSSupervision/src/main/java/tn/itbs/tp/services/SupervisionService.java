@@ -1,6 +1,7 @@
 package tn.itbs.tp.services;
 
 import feign.FeignException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tn.itbs.tp.feign.ParcelleFeign;
 import tn.itbs.tp.kafka.AlerteEvent;
@@ -18,20 +19,17 @@ import java.util.List;
 @Service
 public class SupervisionService {
 
-    private final DonneeCapteurRepo capteurRepo;
-    private final DonneeMeteoRepo meteoRepo;
-    private final ParcelleFeign parcelleFeign;
-    private final KafkaProducerService kafkaProducer;
+    @Autowired
+    private DonneeCapteurRepo capteurRepo;
 
-    public SupervisionService(DonneeCapteurRepo capteurRepo,
-                              DonneeMeteoRepo meteoRepo,
-                              ParcelleFeign parcelleFeign,
-                              KafkaProducerService kafkaProducer) {
-        this.capteurRepo = capteurRepo;
-        this.meteoRepo = meteoRepo;
-        this.parcelleFeign = parcelleFeign;
-        this.kafkaProducer = kafkaProducer;
-    }
+    @Autowired
+    private DonneeMeteoRepo meteoRepo;
+
+    @Autowired
+    private ParcelleFeign parcelleFeign;
+
+    @Autowired
+    private KafkaProducerService kafkaProducer;
 
     public Object ajouterCapteur(DonneeCapteur d) {
         Parcelle parcelle = getParcelleOuNull(d.getParcelleId());
@@ -43,6 +41,7 @@ public class SupervisionService {
         if (d.getDate() == null) {
             d.setDate(Instant.now());
         }
+
         DonneeCapteur saved = capteurRepo.save(d);
 
         if (saved.getValeur() != null && saved.getValeur() < 0) {
@@ -67,6 +66,7 @@ public class SupervisionService {
         if (d.getDate() == null) {
             d.setDate(Instant.now());
         }
+
         return meteoRepo.save(d);
     }
 
@@ -84,7 +84,6 @@ public class SupervisionService {
         } catch (FeignException.NotFound ex) {
             return null;
         } catch (FeignException ex) {
-            // À adapter si tu veux un autre message en cas d'erreur réseau
             return null;
         }
     }
