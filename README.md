@@ -1,5 +1,4 @@
-# AgriPulse – Microservices Agricultural Supervision Platform
-
+# 🌿 AgriPulse – Microservices Agricultural Supervision Platform 🚜
 AgriPulse est une plateforme de **supervision agricole** basée sur une architecture microservices : gestion des exploitations/parcelles, suivi capteurs & météo, génération d’alertes en temps réel via Kafka, notifications persistées, UI Next.js, et un socle Spring Cloud (Gateway, Eureka, Config Server).
 
 ---
