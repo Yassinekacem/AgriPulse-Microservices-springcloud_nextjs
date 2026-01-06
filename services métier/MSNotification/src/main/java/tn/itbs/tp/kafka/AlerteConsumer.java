@@ -1,6 +1,7 @@
 package tn.itbs.tp.kafka;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import tn.itbs.tp.models.Alerte;
@@ -10,11 +11,8 @@ import tn.itbs.tp.services.AlerteService;
 @Service
 public class AlerteConsumer {
 
-    private final AlerteService alerteService;
-
-    public AlerteConsumer(AlerteService alerteService) {
-        this.alerteService = alerteService;
-    }
+    @Autowired
+    private AlerteService alerteService;
 
     @KafkaListener(topics = "alertes.supervision", groupId = "ms-notification-group")
     public void consommer(AlerteEvent event) {
