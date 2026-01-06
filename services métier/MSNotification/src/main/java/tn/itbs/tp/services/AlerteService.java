@@ -1,6 +1,8 @@
 package tn.itbs.tp.services;
 
 import java.time.Instant;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tn.itbs.tp.kafka.AlerteEvent;
 import tn.itbs.tp.models.Alerte;
@@ -9,11 +11,8 @@ import tn.itbs.tp.repositories.AlerteRepo;
 @Service
 public class AlerteService {
 
-    private final AlerteRepo alerteRepo;
-
-    public AlerteService(AlerteRepo alerteRepo) {
-        this.alerteRepo = alerteRepo;
-    }
+    @Autowired
+    private AlerteRepo alerteRepo;
 
     public Alerte enregistrer(AlerteEvent event) {
         Alerte a = new Alerte();
