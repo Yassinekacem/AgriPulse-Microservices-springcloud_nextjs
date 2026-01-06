@@ -1,5 +1,6 @@
 package tn.itbs.tp.controllers;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import tn.itbs.tp.models.DonneeCapteur;
 import tn.itbs.tp.models.DonneeMeteo;
@@ -11,11 +12,8 @@ import java.util.List;
 @RequestMapping("/api/supervision")
 public class SupervisionController {
 
-    private final SupervisionService service;
-
-    public SupervisionController(SupervisionService service) {
-        this.service = service;
-    }
+    @Autowired
+    private SupervisionService service;
 
     @PostMapping("/capteurs")
     public Object addCapteur(@RequestBody DonneeCapteur d) {
